@@ -1,14 +1,15 @@
-import React , { useState, useEffect } from 'react'
-import { Button, StyleSheet,Image, ImageBackground, Text, TextInput, TouchableOpacity, View, Alert } from 'react-native'
+import React , { useState, useEffect, useContext } from 'react'
+import { Button, StyleSheet,Image, ImageBackground, Text, TextInput, TouchableOpacity, View, Alert, ProgressBarAndroid } from 'react-native'
 import { Feather , MaterialIcons } from '@expo/vector-icons'; 
 import Emoji from 'react-native-emoji';
 import { Overlay } from 'react-native-elements';
+import { MyContext } from '../provider'
 
 
 
+const Bord = (props) => {
 
-const Bord = () => {
-
+	const context = useContext(MyContext);
     const [gameState, setGameState] = useState([
     	[0,0,0],
     	[0,0,0],
@@ -29,12 +30,14 @@ const Bord = () => {
     const [aiWin, setAiWin] = useState(false);
     const [tie, setTie] =  useState(false);
     const [gameOver, setGameOver] = useState(false);
+
   	
   	const toggleOverlay = () => {
     	setVisible(!visible);
   	};
 
     useEffect(() => {
+    	console.log(context.historique);
     	if (playerTurn=="ai") {
     		aiMove(moveLeft(gameState));
     	}
@@ -46,7 +49,7 @@ const Bord = () => {
 
   		for (let i = 0; i < 3; i++) {
   			for (let j = 0; j < 3; j++) {
-  				if (bord[i][j] == 0) {
+  				if (bord[i][j] === 0) {
   					let temp=bord.map(arr => { return arr.slice()});
   					temp[i][j]=-1;
   					let score = computeMiniMax(temp, 0, false);
@@ -69,7 +72,7 @@ const Bord = () => {
 
   		let score = evaluate(bord, depth, isMax);
 
-  		if(!moveLeft(bord).length) {
+  		if(!moveLeft(bord).length && score !==-10 && score !==10) {
   			return 0;
   		}
 
@@ -141,17 +144,17 @@ const Bord = () => {
 		  	return 10;
 	  	}
 
-	  	else{
+	  	/*else{
 	  		if(isMax) return 0.2-depth;
 	  		else 0.2+depth;
 	  	}
-	  	
+	  	*/
 	  	//return 0.2 - depth;
 	}
 
   	const aiMove = (availableMoves) => {
 
-    	if (availableMoves.length >= 8) {
+    	if (availableMoves.length >= 9) {
     		let randomNumber = Math.floor(Math.random()*availableMoves.length);
 
     		let [row, col] = availableMoves[randomNumber];
@@ -173,6 +176,7 @@ const Bord = () => {
 				setEmoji('');
 				setMessage('You\'ve lost the game!');
 				setAiWin(true);
+				context.update("ai");
 				toggleOverlay();
 				setTimeout(() => 
 					{
@@ -188,6 +192,7 @@ const Bord = () => {
 				setEmoji('');
 				setMessage('');
 				setTie(true)
+				context.update("tie");
 				toggleOverlay();
 				setTimeout(() => 
 				{
@@ -240,7 +245,6 @@ const Bord = () => {
     	setGameOver(false);
     	setGameState([Array(3).fill(0),Array(3).fill(0),Array(3).fill(0)]);
     	setPlayerTurn(typePlayer[randomNumber]);
-    	setPlayerTurn("human");
     }
     
     const onPress = (row, col) => {
@@ -255,7 +259,8 @@ const Bord = () => {
     				setGameOver(true);
     				setEmoji('raised_hands');
     				setMessage('You are the winner!');
-    				setHostWin(true)
+    				setHostWin(true);
+    				context.update("hum");
     				toggleOverlay();
     				setTimeout(() => 
 					{
@@ -267,11 +272,12 @@ const Bord = () => {
 				, 3000);
     			}
     			if(!checkWinner(gameState, row,col) && !moveLeft(gameState).length ){
-    				setGameOver(true);
-    				setEmoji('');
-    				setMessage('');
+    				setGameOver(true)
+    				setEmoji('')
+    				setMessage('')
     				setTie(true)
-    				toggleOverlay();
+    				context.update("tie")
+    				toggleOverlay()
     				setTimeout(() => 
 					{
 						setVisible(false);
@@ -319,21 +325,26 @@ const Bord = () => {
         					
       						<View style={{flexDirection:'row'}}>
       							<Text style={{color:'#f29c07',textAlign:"center", fontFamily:"sans-serif", fontWeight: 'bold', fontSize:23}}>{message}</Text>
-        						<Emoji name={emoji} style={{fontSize: 26}}/>
       						</View>
       						
         				</View>
         				
       				</Overlay>
     		</View>
+    		<View>
+    			<Text
+    				style={{marginBottom:20,color:playerTurn=="ai"?'white':'black',textAlign:"center", fontFamily:"sans-serif", fontWeight: 'bold', fontSize:23}}>
+    				{playerTurn=="ai"?"IT\'S COMPUTER TURN":"IT\'S YOUR TURN"}
+    			</Text>
+    		</View>
+    		<View style={{flexDirection:'row'}}>
+    			<Text style={{color:'black',textAlign:"center", fontFamily:"sans-serif", fontWeight: 'bold', fontSize:23}}>Me: {context.historique.hum}</Text>
+    			<Emoji name='computer' style={{fontSize: 25, marginLeft:20}}/>
+    			<Text style={{color:'black',textAlign:"center", fontFamily:"sans-serif", fontWeight: 'bold', fontSize:23}}>: {context.historique.ai}</Text>
+    			<Text style={{color:'black',textAlign:"center", fontFamily:"sans-serif", fontWeight: 'bold', fontSize:23, marginLeft:20}}>Tie: {context.historique.tie}</Text>
+    			
+    		</View>
 			
-			<View>
-				<TextInput
-      				style={{ borderColor: 'gray', borderWidth: 2, marginBottom:23, width:200, textAlign:'center', color:'white' }}
-      				onChangeText={text => onChangeText(text)}
-      				value={pseudo}
-    			/>
-			</View>
 	        <View style={styles.row}>
 	          <TouchableOpacity disabled={playerTurn=="ai" || gameOver} style={[styles.square, { borderLeftWidth: 0, borderTopWidth:0, borderWidth:2 } ]} onPress={() => onPress(0,0)}>
 	          	{renderItem(0,0)}
@@ -369,7 +380,15 @@ const Bord = () => {
 	          	{renderItem(2,2)}
 	          </TouchableOpacity>
 	        </View>
-	        <View style={styles.btn}>
+	        <View style={[styles.btn, {flexDirection:'row', justifyContent: 'space-evenly'}]}>
+	        	<Button
+		        	
+	  				onPress={context.reset}
+	  				title="Reset all"
+	  				color="red"
+	  				accessibilityLabel="Learn more about this purple button"
+				/>
+				<Separator />
 	        	<Button
 		        	
 	  				onPress={initGame}
@@ -378,17 +397,30 @@ const Bord = () => {
 	  				accessibilityLabel="Learn more about this purple button"
 				/>
 	        </View>
+
+	        <View style={{flexDirection:'column',alignItems: 'center', marginVertical:100}} >
+	            <Text
+	            		style={{color:'white',textAlign:"center", fontFamily:"sans-serif", fontWeight: 'bold', fontSize:20}}>
+	            		By @Amadou SY
+	            </Text>
+	            <Image style={styles.profileImg} source={require('../1572733516988.jpg')}/>
+	        </View>
 	        
       	</View>
 
 	);
 }
 
+const Separator = () => (
+  <View style={styles.separator} />
+);
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    flexDirection:'column',
+    marginTop:250
   },
   row:{
     flexDirection: "row",
@@ -403,6 +435,20 @@ const styles = StyleSheet.create({
   },
   btn:{
   	marginTop:10,
+  	paddingHorizontal:22
+  },
+  separator: {
+    marginHorizontal: 35,
+    borderBottomColor: '#737373',
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  profileImg: {
+    width: 75,
+    height: 75,
+    borderRadius: 150 / 2,
+    overflow: "hidden",
+    borderWidth: 3,
+    borderColor: "white"
   }
 });
 

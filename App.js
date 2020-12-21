@@ -1,16 +1,20 @@
-import { StatusBar } from 'expo-status-bar';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { StyleSheet, ImageBackground,Text, View } from 'react-native';
 import Bord  from './components/Bord'
-
-const image = { uri: "https://reactjs.org/logo-og.png" };
+import { Provider } from './provider'
 
 export default function App() {
+
+  
+
   return (
     
-    <ImageBackground source={require('./rain-storm-ss.gif')} style={styles.container}>
-      <Bord />
-    </ImageBackground>
+    <Provider>
+      <ImageBackground source={require('./rain-storm-ss.gif')} style={styles.container}>
+        <Bord />
+      </ImageBackground>
+    </Provider>
+    
       
     
   );

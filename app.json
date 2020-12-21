@@ -1,10 +1,10 @@
 {
   "expo": {
-    "name": "TicTacToe",
-    "slug": "TicTacToe",
+    "name": "Thiokki",
+    "slug": "Thiokki",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/playstore-icon.png",
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",
@@ -20,6 +20,7 @@
       "supportsTablet": true
     },
     "android": {
+      "package": "com.amadousysada.dawalel",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#FFFFFF"
@@ -27,6 +28,11 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "sdkVersion": "37.0.0",
+    "platforms": [
+      "android",
+      "ios"
+    ]
   }
 }
