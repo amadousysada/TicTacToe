@@ -17,7 +17,7 @@
     "react-native-emoji": "^1.8.0",
     "react-native-sqlite-storage": "^5.0.0",
     "react-native-web": "^0.11.7",
-    "expo-sqlite": "~8.1.0"
+    "expo-sqlite": "~8.5.0"
   },
   "devDependencies": {
     "@babel/core": "~7.9.0"
