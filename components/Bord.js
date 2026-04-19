@@ -5,7 +5,10 @@ import Emoji from 'react-native-emoji';
 import { Overlay } from 'react-native-elements';
 import { MyContext } from '../provider'
 
-
+const AI_DIFFICULTY = {
+	easy: 'easy',
+	hard: 'hard'
+};
 
 const Bord = (props) => {
 
@@ -30,6 +33,7 @@ const Bord = (props) => {
     const [aiWin, setAiWin] = useState(false);
     const [tie, setTie] =  useState(false);
     const [gameOver, setGameOver] = useState(false);
+    const [difficulty, setDifficulty] = useState(AI_DIFFICULTY.easy);
 
   	
   	const toggleOverlay = () => {
@@ -61,14 +65,11 @@ const Bord = (props) => {
   			}
   		}
   		
-    	//console.log("BEST MOVE! ", bestMove);
   		return bestMove;
     }
 
 
   	const computeMiniMax = (bord, depth, isMax ) =>{
-
-  		let lengthBord = moveLeft(bord);
 
   		let score = evaluate(bord, depth, isMax);
 
@@ -80,13 +81,10 @@ const Bord = (props) => {
 
   		if (score === -10) return score;
 
-  		
-  		
   		let best;
 
   		if(isMax){
   			best = Number.NEGATIVE_INFINITY;
-  			let availables = moveLeft(bord);
 
   			for (let i = 0; i < 3; i++) {
   				for (let j = 0; j < 3; j++) {
@@ -94,8 +92,8 @@ const Bord = (props) => {
   						let temp=bord.map(arr => { return arr.slice()});
   				
   			    		temp[i][j]=-1;
-  			    		let score = computeMiniMax(temp, depth + 1, false)
-  			    		best = Math.max(best, score);
+  			    		let nextScore = computeMiniMax(temp, depth + 1, false)
+  			    		best = Math.max(best, nextScore);
   					}
   				}
   			}
@@ -105,7 +103,6 @@ const Bord = (props) => {
   		}
   		else{
   			best = Number.POSITIVE_INFINITY;
-  			let availables = moveLeft(bord);
 
   			for (let i = 0; i < 3; i++) {
   				for (let j = 0; j < 3; j++) {
@@ -113,8 +110,8 @@ const Bord = (props) => {
   						let temp=bord.map(arr => { return arr.slice()});
   				
   			    		temp[i][j]=1;
-  			    		let score = computeMiniMax(temp, depth + 1, true)
-  			    		best = Math.min(best, score);
+  			    		let nextScore = computeMiniMax(temp, depth + 1, true)
+  			    		best = Math.min(best, nextScore);
   					}
   				}
   			}
@@ -128,13 +125,8 @@ const Bord = (props) => {
 
   	const evaluate = (cells, depth, isMax) => {
 
-  		// Check lines
   		let rows = equal3(cells[0][0],cells[0][1],cells[0][2]) || equal3(cells[1][0],cells[1][1],cells[1][2]) || equal3(cells[2][0],cells[2][1],cells[2][2]);
-	  	
-	  	// Check columns
 	  	let cols = equal3(cells[0][0],cells[1][0],cells[2][0]) || equal3(cells[0][1],cells[1][1],cells[2][1]) || equal3(cells[0][2],cells[1][2],cells[2][2]);
-  		
-  		// Check Diagonals
   		let diags = equal3(cells[0][0],cells[1][1],cells[2][2]) || equal3(cells[0][2], cells[1][1],cells[2][0]);
 	  	
 	  	if(rows || cols || diags){
@@ -143,314 +135,241 @@ const Bord = (props) => {
 		  	}
 		  	return 10;
 	  	}
+	}
 
-	  	/*else{
-	  		if(isMax) return 0.2-depth;
-	  		else 0.2+depth;
-	  	}
-	  	*/
-	  	//return 0.2 - depth;
+	const getRandomMove = (availableMoves) => {
+		const randomIndex = Math.floor(Math.random() * availableMoves.length);
+		return availableMoves[randomIndex];
+	}
+
+	const getEasyMove = (availableMoves) => {
+		if (availableMoves.length >= 9) {
+			return getRandomMove(availableMoves);
+		}
+
+		if (Math.random() < 0.4) {
+			return getRandomMove(availableMoves);
+		}
+
+		return findBestMove(gameState);
 	}
 
   	const aiMove = (availableMoves) => {
 
-    	if (availableMoves.length >= 9) {
-    		let randomNumber = Math.floor(Math.random()*availableMoves.length);
-
-    		let [row, col] = availableMoves[randomNumber];
-    	
-    		gameState[row][col]=-1;
-			setPlayerTurn("human");
-			setGameState(gameState);
-
+		if (!availableMoves.length || gameOver) {
 			return;
-    	}
-  		if (availableMoves.length) {
-  			let [row, col] =findBestMove(gameState);
-    	
-    		gameState[row][col]=-1;
-			setPlayerTurn("human");
-			setGameState(gameState);
-			if(checkWinner(gameState, row, col)){
-				setGameOver(true);
-				setEmoji('');
-				setMessage('You\'ve lost the game!');
-				setAiWin(true);
-				context.update("ai");
-				toggleOverlay();
-				setTimeout(() => 
-					{
-						setVisible(false);
-						setTie(false);
-						setAiWin(false);
-						setHostWin(false);
-					}
-				, 3000);
-			}
-			if(!checkWinner(gameState, row, col) && !moveLeft(gameState).length ){
-				setGameOver(true);
-				setEmoji('');
-				setMessage('');
-				setTie(true)
-				context.update("tie");
-				toggleOverlay();
-				setTimeout(() => 
-				{
-					setVisible(false);
-					setTie(false);
-					setAiWin(false);
-					setHostWin(false);
-				}
-				, 3000);
-			}	
+		}
 
-  		}
-    		
-  	};
+		let move;
 
-  	const moveLeft = (bord) => {
-  		let moves = [];
-  		bord.forEach((row, indexRow)=>{
-  			row.forEach( (cell,indexCol) => {
-  				if(cell==0) moves.push([indexRow, indexCol])
-  			});
-  		});
+		if (difficulty === AI_DIFFICULTY.easy) {
+			move = getEasyMove(availableMoves);
+		} else {
+			move = findBestMove(gameState);
+		}
 
-  		return moves;
+		if (!move) {
+			move = getRandomMove(availableMoves);
+		}
+
+		let newGameState = gameState.map(arr => { return arr.slice()});
+		newGameState[move[0]][move[1]] = -1;
+		setGameState(newGameState);
+		setPlayerTurn("human");
   	}
 
-    const checkWinner = (cells, row, col) => {
-    	let winner = false;
-    	const value = playerTurn=="human"?3:-3
-    	//check the row
-    	winner = cells[row][0]+cells[row][1]+cells[row][2]==value? true: false;
-    	if (winner) return true;
- 		
-    	//check the columns
-    	winner = cells[0][col]+cells[1][col]+cells[2][col]==value? true: false;
-    	if (winner) return true;
+	const moveLeft = (cells) => {
+		let moves = [];
 
-    	//checko diagonals
-    	winner = cells[0][0]+cells[1][1]+cells[2][2]==value? true: false;
-    	if (winner) return true;
-    	winner = cells[0][2]+cells[1][1]+cells[2][0]==value? true: false;
-    	if (winner) return true;
+		for (let i = 0; i < 3; i++) {
+			for (let j = 0; j < 3; j++) {
+				if (cells[i][j] === 0) {
+					moves.push([i, j]);
+				}
+			}
+		}
 
-    	return winner;
+		return moves;
+	}
 
-    }
+	const checkWinner = (cells) => {
+		let rows = equal3(cells[0][0],cells[0][1],cells[0][2]) || equal3(cells[1][0],cells[1][1],cells[1][2]) || equal3(cells[2][0],cells[2][1],cells[2][2]);
+		let cols = equal3(cells[0][0],cells[1][0],cells[2][0]) || equal3(cells[0][1],cells[1][1],cells[2][1]) || equal3(cells[0][2],cells[1][2],cells[2][2]);
+		let diags = equal3(cells[0][0],cells[1][1],cells[2][2]) || equal3(cells[0][2], cells[1][1],cells[2][0]);
 
-    const initGame = ()=>{
-    	let randomNumber = Math.floor(Math.random()*typePlayer.length);
-    	setGameOver(false);
-    	setGameState([Array(3).fill(0),Array(3).fill(0),Array(3).fill(0)]);
-    	setPlayerTurn(typePlayer[randomNumber]);
-    }
-    
-    const onPress = (row, col) => {
- 
-    	
-    	if (gameState[row][col]==0) {
-    		if (playerTurn=="human") {
-    			gameState[row][col]=1
-    			setGameState(gameState)
-    			setPlayerTurn("ai");
-    			if(checkWinner(gameState,row,col)){
-    				setGameOver(true);
-    				setEmoji('raised_hands');
-    				setMessage('You are the winner!');
-    				setHostWin(true);
-    				context.update("hum");
-    				toggleOverlay();
-    				setTimeout(() => 
-					{
-						setVisible(false);
-						setTie(false);
-						setAiWin(false);
-						setHostWin(false);
-					}
-				, 3000);
-    			}
-    			if(!checkWinner(gameState, row,col) && !moveLeft(gameState).length ){
-    				setGameOver(true)
-    				setEmoji('')
-    				setMessage('')
-    				setTie(true)
-    				context.update("tie")
-    				toggleOverlay()
-    				setTimeout(() => 
-					{
-						setVisible(false);
-						setTie(false);
-						setAiWin(false);
-						setHostWin(false);
-					}
-				, 3000);
-    			}
-    			
-    		}
-    		    			
-    		
-    	}
+		if (rows || cols || diags) {
+			return true;
+		}
 
+		return false;
+	}
 
-    };
+	useEffect(() => {
+		if (checkWinner(gameState)) {
+			setGameOver(true);
+			setVisible(true);
 
-    const onChangeText = (text) => setPseudo(text);
-    const renderItem = (row, col) => {
+			if (playerTurn === 'human') {
+				setAiWin(true);
+				setMessage('AI win !');
+				setEmoji('robot_face');
+				context.update('ai');
+			} else {
+				setHostWin(true);
+				setMessage('You win !');
+				setEmoji('tada');
+				context.update('hum');
+			}
+		} else if (!moveLeft(gameState).length) {
+			setGameOver(true);
+			setTie(true);
+			setVisible(true);
+			setMessage('Tie !');
+			setEmoji('raised_hands');
+			context.update('tie');
+		}
+	}, [gameState]);
 
-    	
+	const play = (row, col) => {
+		if (gameState[row][col] !== 0 || playerTurn !== 'human' || gameOver) {
+			return;
+		}
 
-    	if(gameState[row][col]==1){
+		let newGameState = gameState.map(arr => { return arr.slice()});
+		newGameState[row][col] = 1;
+		setGameState(newGameState);
+		setPlayerTurn('ai');
+	}
 
-    		return (<MaterialIcons name="close" size={100} color="red" />);
-    	}
-    	else if (gameState[row][col]==-1) {
-    		return (<Feather name="circle" size={100} color="white" />);
-    	}
-    	else{
-    		return (<Text></Text>);
-    	}
-    };
+	const resetGame = () => {
+		setGameState([
+			[0,0,0],
+			[0,0,0],
+			[0,0,0]
+		]);
+		setPlayerTurn('human');
+		setVisible(false);
+		setEmoji('raised_hands');
+		setMessage('Tie !');
+		setHostWin(false);
+		setAiWin(false);
+		setTie(false);
+		setGameOver(false);
+	}
+
+	const renderIcon = (value) => {
+		if (value === 1) {
+			return <Feather name="x" size={60} color="white" />;
+		}
+
+		if (value === -1) {
+			return <MaterialIcons name="radio-button-unchecked" size={60} color="white" />;
+		}
+
+		return null;
+	}
 
 	return (
-		<View style={styles.container} disabled={true}>
-			<View>
-      			
-      				<Overlay isVisible={visible} onBackdropPress={toggleOverlay} overlayStyle={{backgroundColor:'#0843a3'}}>
-        				<View>
-        					{ hostWin ? <Image style={{width:'100%'}} source={require('../tenor.gif')}/> : null }
-        					{ aiWin ? <Image style={{width:'100%'}} source={require('../HpP8kVn.gif')}/> : null }
-        					{ tie ? <Text style={{color:'#f29c07',textAlign:"center", fontFamily:"sans-serif", fontWeight: 'bold', fontSize:23}}>Tie Game!</Text> : null }
-        					
-      						<View style={{flexDirection:'row'}}>
-      							<Text style={{color:'#f29c07',textAlign:"center", fontFamily:"sans-serif", fontWeight: 'bold', fontSize:23}}>{message}</Text>
-      						</View>
-      						
-        				</View>
-        				
-      				</Overlay>
-    		</View>
-    		<View>
-    			<Text
-    				style={{marginBottom:20,color:playerTurn=="ai"?'white':'black',textAlign:"center", fontFamily:"sans-serif", fontWeight: 'bold', fontSize:23}}>
-    				{playerTurn=="ai"?"IT\'S COMPUTER TURN":"IT\'S YOUR TURN"}
-    			</Text>
-    		</View>
-    		<View style={{flexDirection:'row'}}>
-    			<Text style={{color:'black',textAlign:"center", fontFamily:"sans-serif", fontWeight: 'bold', fontSize:23}}>Me: {context.historique.hum}</Text>
-    			<Emoji name='computer' style={{fontSize: 25, marginLeft:20}}/>
-    			<Text style={{color:'black',textAlign:"center", fontFamily:"sans-serif", fontWeight: 'bold', fontSize:23}}>: {context.historique.ai}</Text>
-    			<Text style={{color:'black',textAlign:"center", fontFamily:"sans-serif", fontWeight: 'bold', fontSize:23, marginLeft:20}}>Tie: {context.historique.tie}</Text>
-    			
-    		</View>
-			
-	        <View style={styles.row}>
-	          <TouchableOpacity disabled={playerTurn=="ai" || gameOver} style={[styles.square, { borderLeftWidth: 0, borderTopWidth:0, borderWidth:2 } ]} onPress={() => onPress(0,0)}>
-	          	{renderItem(0,0)}
-	          </TouchableOpacity>
-	          <TouchableOpacity disabled={playerTurn=="ai" || gameOver} style={[styles.square, { borderTopWidth:0, borderWidth:2 } ]} onPress={() => onPress(0,1)}>
-	          	{renderItem(0,1)}
-	          </TouchableOpacity>
-	          <TouchableOpacity disabled={playerTurn=="ai" || gameOver} style={[styles.square, { borderTopWidth:0, borderRightWidth:0, borderWidth:2 } ]} onPress={() => onPress(0,2)}>
-	          	{renderItem(0,2)}
-	          </TouchableOpacity>
-	        </View>
-
-	        <View style={styles.row}>
-	          <TouchableOpacity disabled={playerTurn=="ai" || gameOver} style={[styles.square, {borderLeftWidth: 0, borderWidth:2 } ]} onPress={() => onPress(1,0)}>
-	          	{renderItem(1,0)}
-	          </TouchableOpacity>
-	          <TouchableOpacity disabled={playerTurn=="ai" || gameOver} style={[styles.square, {borderWidth:2 } ]} onPress={() => onPress(1,1)}>
-	          	{renderItem(1,1)}
-	          </TouchableOpacity>
-	          <TouchableOpacity disabled={playerTurn=="ai" || gameOver} style={[styles.square, {borderRightWidth:0, borderWidth:2 } ]} onPress={() => onPress(1,2)}>
-	          	{renderItem(1,2)}
-	          </TouchableOpacity>
-	        </View>
-
-	        <View style={styles.row}>
-	          <TouchableOpacity disabled={playerTurn=="ai" || gameOver} style={[styles.square, {borderLeftWidth: 0, borderBottomWidth:0, borderWidth:2 } ]} onPress={() => onPress(2,0)}>
-	          	{renderItem(2,0)}
-	          </TouchableOpacity>
-	          <TouchableOpacity disabled={playerTurn=="ai" || gameOver} style={[styles.square, {borderBottomWidth:0, borderWidth:2 } ]} onPress={() => onPress(2,1)}>
-	          	{renderItem(2,1)}
-	          </TouchableOpacity>
-	          <TouchableOpacity disabled={playerTurn=="ai" || gameOver} style={[styles.square, {borderBottomWidth:0, borderRightWidth:0, borderWidth:2 } ]} onPress={() => onPress(2,2)}>
-	          	{renderItem(2,2)}
-	          </TouchableOpacity>
-	        </View>
-	        <View style={[styles.btn, {flexDirection:'row', justifyContent: 'space-evenly'}]}>
-	        	<Button
-		        	
-	  				onPress={context.reset}
-	  				title="Reset all"
-	  				color="red"
-	  				accessibilityLabel="Learn more about this purple button"
-				/>
-				<Separator />
-	        	<Button
-		        	
-	  				onPress={initGame}
-	  				title="New Game"
-	  				color="#841584"
-	  				accessibilityLabel="Learn more about this purple button"
-				/>
-	        </View>
-
-	        <View style={{flexDirection:'column',alignItems: 'center', marginVertical:100}} >
-	            <Text
-	            		style={{color:'white',textAlign:"center", fontFamily:"sans-serif", fontWeight: 'bold', fontSize:20}}>
-	            		By @Amadou SY
-	            </Text>
-	            <Image style={styles.profileImg} source={require('../1572733516988.jpg')}/>
-	        </View>
-	        
-      	</View>
-
-	);
+		<View style={styles.content}>
+			<Text style={styles.title}>Tic Tac Toe</Text>
+			<View style={styles.levelContainer}>
+				<Text style={styles.levelLabel}>Level:</Text>
+				<TouchableOpacity
+					style={[styles.levelButton, difficulty === AI_DIFFICULTY.easy && styles.levelButtonActive]}
+					onPress={() => setDifficulty(AI_DIFFICULTY.easy)}>
+					<Text style={styles.levelButtonText}>Easy</Text>
+				</TouchableOpacity>
+				<TouchableOpacity
+					style={[styles.levelButton, difficulty === AI_DIFFICULTY.hard && styles.levelButtonActive]}
+					onPress={() => setDifficulty(AI_DIFFICULTY.hard)}>
+					<Text style={styles.levelButtonText}>Hard</Text>
+				</TouchableOpacity>
+			</View>
+			<View style={styles.board}>
+				{gameState.map((row, rowIndex) => (
+					<View key={rowIndex} style={styles.row}>
+						{row.map((cell, colIndex) => (
+							<TouchableOpacity key={`${rowIndex}-${colIndex}`} style={styles.cell} onPress={() => play(rowIndex, colIndex)}>
+								{renderIcon(cell)}
+							</TouchableOpacity>
+						))}
+					</View>
+				))}
+			</View>
+			<Overlay isVisible={visible} onBackdropPress={toggleOverlay}>
+				<View style={styles.overlayContent}>
+					<Emoji name={emoji} style={styles.emoji} />
+					<Text style={styles.message}>{message}</Text>
+					<Button title="Play again" onPress={resetGame} />
+				</View>
+			</Overlay>
+		</View>
+	)
 }
 
-const Separator = () => (
-  <View style={styles.separator} />
-);
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    flexDirection:'column',
-    marginTop:250
-  },
-  row:{
-    flexDirection: "row",
-    alignItems: 'center',
-    justifyContent: 'center',
-
-  },
-  square:{
-  	width:100,
-    height:100,
-    backgroundColor: '#dfdce6',
-  },
-  btn:{
-  	marginTop:10,
-  	paddingHorizontal:22
-  },
-  separator: {
-    marginHorizontal: 35,
-    borderBottomColor: '#737373',
-    borderBottomWidth: StyleSheet.hairlineWidth,
-  },
-  profileImg: {
-    width: 75,
-    height: 75,
-    borderRadius: 150 / 2,
-    overflow: "hidden",
-    borderWidth: 3,
-    borderColor: "white"
-  }
+	content: {
+		alignItems: 'center',
+		justifyContent: 'center'
+	},
+	title: {
+		fontSize: 30,
+		fontWeight: 'bold',
+		color: 'white',
+		marginBottom: 20
+	},
+	levelContainer: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		marginBottom: 20
+	},
+	levelLabel: {
+		color: 'white',
+		fontSize: 18,
+		marginRight: 10
+	},
+	levelButton: {
+		paddingVertical: 8,
+		paddingHorizontal: 14,
+		borderRadius: 8,
+		backgroundColor: 'rgba(255,255,255,0.25)',
+		marginHorizontal: 4
+	},
+	levelButtonActive: {
+		backgroundColor: 'rgba(255,255,255,0.5)'
+	},
+	levelButtonText: {
+		color: 'white',
+		fontWeight: 'bold'
+	},
+	board: {
+		backgroundColor: 'rgba(0,0,0,0.35)',
+		padding: 8,
+		borderRadius: 12
+	},
+	row: {
+		flexDirection: 'row'
+	},
+	cell: {
+		width: 90,
+		height: 90,
+		borderWidth: 1,
+		borderColor: 'white',
+		alignItems: 'center',
+		justifyContent: 'center'
+	},
+	overlayContent: {
+		padding: 20,
+		alignItems: 'center'
+	},
+	emoji: {
+		fontSize: 50,
+		marginBottom: 10
+	},
+	message: {
+		fontSize: 22,
+		marginBottom: 20
+	}
 });
-
 
 export default Bord;
