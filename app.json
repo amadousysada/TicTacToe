@@ -10,14 +10,12 @@
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
-    "updates": {
-      "fallbackToCacheTimeout": 0
-    },
     "assetBundlePatterns": [
       "**/*"
     ],
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.amadousysada.dawalel"
     },
     "android": {
       "package": "com.amadousysada.dawalel",
@@ -29,7 +27,6 @@
     "web": {
       "favicon": "./assets/favicon.png"
     },
-    "sdkVersion": "37.0.0",
     "platforms": [
       "android",
       "ios"

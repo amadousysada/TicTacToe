@@ -1,5 +1,5 @@
 import React , { useState, useEffect, useContext } from 'react'
-import { Button, StyleSheet,Image, ImageBackground, Text, TextInput, TouchableOpacity, View, Alert, ProgressBarAndroid } from 'react-native'
+import { Button, StyleSheet,Image, ImageBackground, Text, TextInput, TouchableOpacity, View, Alert } from 'react-native'
 import { Feather , MaterialIcons } from '@expo/vector-icons'; 
 import Emoji from 'react-native-emoji';
 import { Overlay } from 'react-native-elements';
@@ -37,7 +37,6 @@ const Bord = (props) => {
   	};
 
     useEffect(() => {
-    	console.log(context.historique);
     	if (playerTurn=="ai") {
     		aiMove(moveLeft(gameState));
     	}
@@ -246,6 +245,11 @@ const Bord = (props) => {
     	setGameState([Array(3).fill(0),Array(3).fill(0),Array(3).fill(0)]);
     	setPlayerTurn(typePlayer[randomNumber]);
     }
+
+    const resetAll = ()=>{
+    	context.reset();
+    	initGame();
+    }
     
     const onPress = (row, col) => {
  
@@ -383,7 +387,7 @@ const Bord = (props) => {
 	        <View style={[styles.btn, {flexDirection:'row', justifyContent: 'space-evenly'}]}>
 	        	<Button
 		        	
-	  				onPress={context.reset}
+	  				onPress={resetAll}
 	  				title="Reset all"
 	  				color="red"
 	  				accessibilityLabel="Learn more about this purple button"
