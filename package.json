@@ -7,8 +7,8 @@
     "web": "expo start --web"
   },
   "dependencies": {
-    "eas": "^0.1.0",
     "expo": "^54.0.35",
+    "expo-dev-client": "~6.0.21",
     "expo-sqlite": "~16.0.10",
     "expo-status-bar": "~3.0.9",
     "react": "19.1.0",
@@ -22,7 +22,8 @@
   },
   "devDependencies": {
     "@babel/core": "^7.24.0",
-    "babel-preset-expo": "~54.0.10"
+    "babel-preset-expo": "~54.0.10",
+    "eas-cli": "^20.4.0"
   },
   "private": true
 }

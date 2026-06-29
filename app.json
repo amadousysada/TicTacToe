@@ -15,7 +15,10 @@
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.amadousysada.dawalel"
+      "bundleIdentifier": "com.amadousysada.dawalel",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "package": "com.amadousysada.dawalel",
@@ -30,6 +33,12 @@
     "platforms": [
       "android",
       "ios"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "f4e34d86-8891-4659-a9e0-9bfd121af274"
+      }
+    },
+    "owner": "amadousy"
   }
 }
