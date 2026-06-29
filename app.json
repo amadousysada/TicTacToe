@@ -21,7 +21,7 @@
       }
     },
     "android": {
-      "package": "com.amadousysada.dawalel",
+      "package": "com.thiokki.app",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#FFFFFF"
