@@ -407,7 +407,7 @@ const Bord = (props) => {
 	            		style={{color:'white',textAlign:"center", fontFamily:"sans-serif", fontWeight: 'bold', fontSize:20}}>
 	            		By @Amadou SY
 	            </Text>
-	            <Image style={styles.profileImg} source={require('../1572733516988.jpg')}/>
+	            <Image style={styles.profileImg} source={require('../profile.jpg')}/>
 	        </View>
 	        
       	</View>
