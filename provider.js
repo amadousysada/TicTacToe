@@ -1,101 +1,80 @@
 import React, { useEffect, useState } from 'react';
 import * as SQLite from 'expo-sqlite';
 
-
-const db = SQLite.openDatabase('database.db');
+const db = SQLite.openDatabaseSync('database.db');
 
 export const MyContext = React.createContext({
-	historique: {},
-	update: (user)=>{},
-	reset: () => {}
-
+  historique: {},
+  update: () => {},
+  reset: () => {},
 });
 
-export const Provider = (props)=>{
+export const Provider = (props) => {
+  const [data, setData] = useState({ ai: 0, hum: 0, tie: 0 });
 
-	useEffect(() => {
-		console.log("hey")
-    	db.transaction(tx => {
-      		tx.executeSql('CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY AUTOINCREMENT, pseudo TEXT, compteur INT)'
-      	)});
-      	//fetchData();
-  	}, []);
+  const loadScores = () => {
+    try {
+      const rows = db.getAllSync('SELECT pseudo, compteur FROM users');
+      const nextData = { ai: 0, hum: 0, tie: 0 };
 
-	const [data, setData] = useState({ai:0, hum:0, tie:0});
+      rows.forEach((row) => {
+        if (row.pseudo === 'ai') {
+          nextData.ai = row.compteur;
+        } else if (row.pseudo === 'hum') {
+          nextData.hum = row.compteur;
+        } else if (row.pseudo === 'tie') {
+          nextData.tie = row.compteur;
+        }
+      });
 
-  	const fetchData = () => {
-	    db.transaction(tx => {
-	      // sending 4 arguments in executeSql
-	      tx.executeSql("SELECT compteur FROM users ", null, // passing sql query and parameters:null
-	        // success callback which sends two things Transaction object and ResultSet Object
-	        (txObj, resultSet) => {
-	          resultSet.rows._array.map(row => {
-	            if (row.pseudo == 'ai'){
-	              data.ai=row.compteur;
-	              setData(data);
-	            }else if (row.pseudo == 'hum'){
-	              data.hum=row.compteur;
-	              setData(data);
-	            }else {
-	              data.tie=row.compteur;
-	              setData(data);
-	            }
-	          })
-	        },
-	        // failure callback which sends two things Transaction object and Error
-	        (txObj, error) => console.log('Error ', error)
-	      ) // end executeSQL
-	    }) // end transaction
-  	}
+      setData(nextData);
+    } catch (error) {
+      console.log('Error loading scores', error);
+    }
+  };
 
-  	const updateCompteur = (user)=>{
-	    db.transaction(tx => {
-	      // sending 4 arguments in executeSql
-	      tx.executeSql('UPDATE users SET compteur = compteur + 1 WHERE pseudo = ?', [user], // passing sql query and parameters:null
-	        // success callback which sends two things Transaction object and ResultSet Object
-	        (txObj, resultSet) => {
-	          
-	            if (user == 'ai'){
-	              data.ai=data.ai+1;
-	              setData(data);
-	            }else if (user == 'hum'){
-	              data.hum=data.hum+1;
-	              setData(data);
-	            }else {
-	              data.tie=data.tie+1;
-	              setData(data);
-	            }
-	          
-	        },
-	        // failure callback which sends two things Transaction object and Error
-	        (txObj, error) => console.log('Error ', error)
-	      ) // end executeSQL
-	    }) // end trans
-  	}
+  useEffect(() => {
+    try {
+      db.execSync('CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY AUTOINCREMENT, pseudo TEXT UNIQUE, compteur INTEGER DEFAULT 0)');
+      ['ai', 'hum', 'tie'].forEach((pseudo) => {
+        db.runSync('INSERT OR IGNORE INTO users (pseudo, compteur) VALUES (?, ?)', [pseudo, 0]);
+      });
+      loadScores();
+    } catch (error) {
+      console.log('Error initializing database', error);
+    }
+  }, []);
 
-  	const resetCompteur = ()=>{
-	    db.transaction(tx => {
-	      // sending 4 arguments in executeSql
-	      tx.executeSql('delete from users', null, // passing sql query and parameters:null
-	        // success callback which sends two things Transaction object and ResultSet Object
-	        (txObj, resultSet) => setData({ai:0, hum:0, tie:0}),
-	        // failure callback which sends two things Transaction object and Error
-	        (txObj, error) => console.log('Error ', error)
-	      ) // end executeSQL
-	    }) // end trans
-  	}
+  const updateCompteur = (user) => {
+    try {
+      db.runSync('UPDATE users SET compteur = compteur + 1 WHERE pseudo = ?', [user]);
+      setData((current) => ({
+        ...current,
+        [user]: (current[user] || 0) + 1,
+      }));
+    } catch (error) {
+      console.log('Error updating score', error);
+    }
+  };
 
-  	
- 	return (
-	  	<MyContext.Provider 
-		   value={{
-		    historique: data,
-		    update: updateCompteur,
-		    reset: resetCompteur
-		   }}
-		  >
-		   {props.children}
-	  	</MyContext.Provider>
-	);
+  const resetCompteur = () => {
+    try {
+      db.runSync('UPDATE users SET compteur = 0');
+      setData({ ai: 0, hum: 0, tie: 0 });
+    } catch (error) {
+      console.log('Error resetting scores', error);
+    }
+  };
 
-}
+  return (
+    <MyContext.Provider
+      value={{
+        historique: data,
+        update: updateCompteur,
+        reset: resetCompteur,
+      }}
+    >
+      {props.children}
+    </MyContext.Provider>
+  );
+};
