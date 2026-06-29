@@ -30,6 +30,12 @@
     "platforms": [
       "android",
       "ios"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "f4e34d86-8891-4659-a9e0-9bfd121af274"
+      }
+    },
+    "owner": "amadousy"
   }
 }
